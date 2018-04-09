@@ -1,8 +1,12 @@
 window.onload = function () {
 
-    document.addEventListener("touchstart",function (ev) {
+    document.body.addEventListener("touchstart",function (ev) {
         ev.preventDefault();
     },{passive:false});
+    document.body.addEventListener("touchmove",function (ev) {
+        ev.preventDefault();
+    },{passive:false});
+
 
     let globalFS = parseInt(document.getElementsByTagName("html")[0].style.fontSize);
 
@@ -19,6 +23,10 @@ window.onload = function () {
     let backBtn = document.getElementsByClassName("backtoTop")[0];
 
     let slideisMove = false;
+    const pointRecorder = [0,0];
+    let val;
+    let dY;
+    let speed;
 
     slideMove(slideLi).init();
     bodyMove().init();
@@ -26,7 +34,6 @@ window.onload = function () {
     backBtn.addEventListener("touchstart",function(){
         body.style.transition = ".5s";
         let nowScrollTop = body.style.transform.match(/translateY\(([-]?.+)px\)/)[1];
-        console.log(nowScrollTop)
         if(nowScrollTop >= 0) return;
         body.style.transform = "translateY(0)";
     })
@@ -123,6 +130,8 @@ window.onload = function () {
             let isTop;
             body.addEventListener("touchstart",function (ev) {
                 ev.stopPropagation();
+                dY = 0;
+                speed = 0;
                 body.style.transition = "none";
                 headerTitle.style.transition = "none";
                 header.style.transition = "none";
@@ -132,21 +141,26 @@ window.onload = function () {
                 let startY = ev.changedTouches[0].pageY;
                 isTop = body.getBoundingClientRect().top + 50 >0?true:false;
                 body.addEventListener("touchmove",function (e) {
+
                     if(slideisMove) return;
                     if(startTransTop < -350 && !isTop){
                         changeTitle();
                     }
                     shrinkHeight = document.body.getBoundingClientRect().height - document.documentElement.clientHeight - header.offsetHeight;
                     let nowY = e.changedTouches[0].pageY;
-                    let val = nowY - startY;
+                    pointRecorder[0] = nowY;
+                    val = nowY - startY;
                     if((startTransTop == 0 && val > 0) || (Math.abs(startTransTop) >= shrinkHeight - 100 && val < 0)){
                         val = val/3;
                     }
-                    body.style.transform = "translateY("+((startTransTop + val))+"px)";
+                    speed = val*1.2;
+                    body.style.transform = "translateY("+((startTransTop + val+ speed/4))+"px)";
                 })
                 body.addEventListener("touchend",function (ev) {
                     ev.stopPropagation();
+                    pointRecorder[1] = ev.changedTouches[0].pageY;
                     let endTransY = body.style.transform.match(/translateY\(([-]?.+)px\)/);
+                    dY = pointRecorder[1] - pointRecorder[0];
                     let endTransTop = parseInt(endTransY[1]);
                     if(endTransY){
                         if(endTransTop > 0){
@@ -158,8 +172,17 @@ window.onload = function () {
                             endTransTop = shrinkHeight;
                             body.style.transition = ".3s";
                             body.style.transform = "translateY("+(-endTransTop)+"px)";
-                        }
+                        }else {
+                            body.style.transition = ".2s";
+
+                            if(dY <= 0){
+                                body.style.transform = "translateY("+(endTransTop + dY /50)+"px)";
+                            }else {
+                                body.style.transform = "translateY("+(endTransTop + dY /50)+"px)";
+                            }
+                         }
                     }
+
                 })
             })
         }
